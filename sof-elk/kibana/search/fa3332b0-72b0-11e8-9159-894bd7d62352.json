@@ -1,0 +1,40 @@
+{
+  "attributes": {
+    "columns": [
+      "exporter",
+      "aprotocol",
+      "source_ip",
+      "source_port",
+      "destination_ip",
+      "destination_port",
+      "total_bytes",
+      "total_packets"
+    ],
+    "description": "",
+    "hits": 0,
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"filter\":[],\"highlightAll\":true,\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\",\"query\":{\"language\":\"kuery\",\"query\":\"\"},\"version\":true}"
+    },
+    "sort": [
+      [
+        "@timestamp",
+        "desc"
+      ]
+    ],
+    "title": "NetFlow Discovery",
+    "version": 1
+  },
+  "coreMigrationVersion": "8.6.2",
+  "id": "fa3332b0-72b0-11e8-9159-894bd7d62352",
+  "namespaces": [
+    "default"
+  ],
+  "references": [
+    {
+      "id": "netflow",
+      "name": "kibanaSavedObjectMeta.searchSourceJSON.index",
+      "type": "index-pattern"
+    }
+  ],
+  "type": "search"
+}

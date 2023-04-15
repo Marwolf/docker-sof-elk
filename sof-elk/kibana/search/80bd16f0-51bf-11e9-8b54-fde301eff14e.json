@@ -1,0 +1,35 @@
+{
+  "attributes": {
+    "columns": [
+      "parentpath",
+      "filename",
+      "filesize"
+    ],
+    "description": "",
+    "hits": 0,
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"filter\":[],\"highlightAll\":true,\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\",\"query\":{\"language\":\"kuery\",\"query\":\"\"},\"version\":true}"
+    },
+    "sort": [
+      [
+        "@timestamp",
+        "desc"
+      ]
+    ],
+    "title": "Filesystem Discovery",
+    "version": 1
+  },
+  "coreMigrationVersion": "8.6.2",
+  "id": "80bd16f0-51bf-11e9-8b54-fde301eff14e",
+  "namespaces": [
+    "default"
+  ],
+  "references": [
+    {
+      "id": "filesystem",
+      "name": "kibanaSavedObjectMeta.searchSourceJSON.index",
+      "type": "index-pattern"
+    }
+  ],
+  "type": "search"
+}
