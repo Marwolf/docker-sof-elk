@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SOF-ELK(R) Supporting script
-# (C)2019 Lewes Technology Consulting, LLC
+# (C)2023 Lewes Technology Consulting, LLC
 #
 # This script is used to NUKE data from elasticsearch.  This is incredibly destructive!
 # Optionally, re-load data from disk for the selected index or filepath
@@ -77,13 +77,13 @@ signal.signal(signal.SIGINT, ctrlc_handler)
 
 # get a list of indices other than the standard set
 def get_es_indices(es):
-    special_index_rawregex = [ '\.elasticsearch', '\.kibana', '\.logstash', '\.tasks', 'elastalert_.*', '.apm*' ]
+    special_index_rawregex = [ '\.elasticsearch', '\.kibana', '\.logstash', '\.tasks', 'elastalert_.*', '.apm*', '.async', '.ds' ]
     special_index_regex = []
     for raw_regex in special_index_rawregex:
         special_index_regex.append(re.compile(raw_regex))
 
     index_dict = {}
-    indices = list(es.indices.get_alias('*'))
+    indices = list(es.indices.get_alias(index = '*', expand_wildcards='open'))
     for index in indices:
         if not any(compiled_reg.match(index) for compiled_reg in special_index_regex):
             baseindex = index.split('-')[0]
@@ -100,6 +100,8 @@ sourcedir_index_mapping = {
     'kape': 'lnkfiles',
     'kape': 'filesystem',
     'kape': 'evtxfiles',
+    'microsoft365': 'microsoft365',
+    'kubernetes': 'kubernetes',
 }
 # automatically create the reverse dictionary
 index_sourcedir_mapping = {}
@@ -122,7 +124,7 @@ if args.reload and os.geteuid() != 0:
     exit(1)
 
 # create Elasticsearch handle
-es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+es = Elasticsearch(['http://localhost:9200'])
 try:
     es.info()    
 except:
@@ -240,7 +242,6 @@ if args.reload:
             new_reg_file = open(filebeat_registry_file, 'wb')
             json.dump(new_reg_data, new_reg_file)
             new_reg_file.close()
-
 
         except JSONDecodeError:
             print('ERROR: Source data in filebeat registry file %s is not valid json.  Skipping.' % filebeat_registry_file)

@@ -1,10 +1,10 @@
-version: '3.5'
-
+version: '3.7'
 services:
 
     # Used as load balancer and frontend domain parser
     traefik:
         image: traefik:1.7 # The official Traefik docker image
+        container_name: traefik
         command: --api --docker # Enables the web UI and tells Traefik to listen to docker
         ports:
             - "80:80"     # The HTTP port
@@ -15,41 +15,56 @@ services:
             - ./traefik/${TRAEFIK_CONFIG:-traefik_dev.toml}:/traefik.toml
             - ./traefik/acme.json:/acme.json
         networks:
-            - master
+            #- master
+            - "elk-net"
 
     # ELK
     elasticsearch:
-        image: library/elasticsearch:6.5.0
+        image: library/elasticsearch:8.6.2
+        container_name: elasticsearch
         volumes:
             # for persistent data
             - ./elasticsearch-data:/usr/share/elasticsearch/data
             - ./elk_config/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
             - ./sof-elk:/usr/local/sof-elk
         ports:
-            - 9200:9200
-            - 9300
-        environment:
-            ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+            - "9200:9200"
+            - "9300:9300"
+        #environment:
+            #ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+        ulimits: 
+          memlock:
+            soft: -1 
+            hard: -1
+          nofile:
+            soft: 65536
+            hard: 65536
+        cap_add: 
+            - IPC_LOCK
         networks:
-            - master
+            #- master
+            - "elk-net"
         deploy:
             restart_policy:
                 condition: on-failure
             resources:
                 limits:
-                    memory: 1G
+                    memory: 2G
 
     logstash:
-        image: library/logstash:6.5.0
+        image: library/logstash:8.6.2
+        container_name: logstash
         volumes:
             - ./elk_config/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+            - ./elk_config/logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
             - ./sof-elk:/usr/local/sof-elk
             - ./resources/GeoIP:/usr/local/share/GeoIP
         ports:
             - 5000/udp
             - 5044
         networks:
-            - master
+            #- master
+            - "elk-net"
         depends_on:
             - elasticsearch
         restart: on-failure
@@ -57,13 +72,15 @@ services:
             restart_policy:
                 condition: on-failure
         # command: "--debug"
-        command: "bash -c 'logstash-plugin install logstash-input-relp logstash-filter-tld logstash-filter-rest && /usr/local/bin/docker-entrypoint'"
+        command: "bash -c 'logstash-plugin install logstash-input-relp logstash-filter-tld logstash-filter-json_encode logstash-filter-rest && /usr/local/bin/docker-entrypoint' && metricbeat modules enable logstash-xpack"
 
     # Takes logs from each microservice and pipes into logstash
     logspout:
         image: bekt/logspout-logstash
+        container_name: logspout
         environment:
-            ROUTE_URIS: 'logstash://logstash:5000'
+            #ROUTE_URIS: 'logstash://logstash:5000'
+            ROUTE_URIS: logstash+udp://logstash:5000
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
         depends_on:
@@ -74,23 +91,27 @@ services:
                 condition: any
                 delay: 10s
         networks:
-            - master
+            #- master
+            - "elk-net"
         restart: on-failure
 
     kibana:
-        image: library/kibana:6.5.0
+        image: library/kibana:8.6.2
+        container_name: kibana
         volumes:
             - ./elk_config/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
             - ./sof-elk:/usr/local/sof-elk
+            #- ./logs/kibana:/var/log/kibana
         ports:
-            - 5601
+            - "5601:5601"
         networks:
-            - master
+            #- master
+            - "elk-net"
         depends_on:
             - elasticsearch
         deploy:
-                restart_policy:
-                        condition: on-failure
+            restart_policy:
+                condition: on-failure
         labels:
             - "traefik.backend=kibana"
             - "traefik.docker.network=${network_name:-masternetwork}"
@@ -99,14 +120,17 @@ services:
             - "traefik.port=5601"
     
     filebeat:
-        image: elastic/filebeat:6.5.0
+        image: elastic/filebeat:8.6.2
+        container_name: filebeat
         networks:
-            - master
+            #- master
+            - "elk-net"
+        entrypoint: "filebeat -e -strict.perms=false"
         volumes:
             - ./elk_config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
             - ./sof-elk:/usr/local/sof-elk
-            - ./filebeat-data:/use/share/filebeat/data # persistent data storage, may remove, doesn't seem to be used
-            - ./server-files:/logstash # for actual file processing
+            #- ./logstash:/use/share/filebeat/data # persistent data storage
+            - ./logstash:/logstash # for actual file processin
         environment:
             - ELASTICSEARCH_HOST=elasticsearch
             - KIBANA_HOST=kibana
@@ -117,6 +141,7 @@ services:
     # Used to drop files that can be immediately picked up by filebeat and sent to logstash
     droppy:
         image: silverwind/droppy
+        container_name: droppy
         ports:
             - 8989
         volumes:
@@ -124,18 +149,23 @@ services:
             - ./server-files:/files
         restart: unless-stopped
         networks:
-            - master
+            #- master
+            - "elk-net"
         labels:
             - "traefik.backend=droppy"
             - "traefik.docker.network=${network_name:-masternetwork}"
             - "traefik.frontend.rule=Host:droppy.${BASE_URL:-localhost}" # add another rule with ";Host:host"
             - "traefik.enable=true"
             - "traefik.port=8989"
-        
-
+       
 networks:
+      elk-net:
+        driver: bridge
+#networks:
     # Network mostly needed for swarm
     # Set to bridge to test locally and have ports be outside accessible
-    master:
-        name: "${network_name:-masternetwork}"
-        driver: overlay
+    #master:
+        #name: "${network_name:-masternetwork}"
+        #driver: overlay
+        #driver: bridge
+        #attachable: true

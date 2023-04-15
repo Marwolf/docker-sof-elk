@@ -1,6 +1,33 @@
 ---
-## Default Logstash configuration from logstash-docker.
-## from https://github.com/elastic/logstash-docker/blob/master/build/logstash/config/logstash-oss.yml
-#
-http.host: "0.0.0.0"
-path.config: /usr/local/sof-elk/configfiles
+## Based on configuration from https://github.com/elastic/logstash/blob/main/config/logstash.yml
+
+#Depreciated?
+#http.host: 0.0.0.0
+
+pipeline.id: main # The ID of the pipeline.
+
+pipeline.ecs_compatibility: v8 # Sets the pipeline’s default value for ecs_compatibility
+            
+path.config: /usr/share/logstash/config/pipelines.yml # The path to the Logstash pipeline. If you specify a directory or wildcard, config files are read from the directory in alphabetical order.
+
+pipeline.ecs_compatibility: v8 # Sets the pipeline’s default value for ecs_compatibility, a setting that is available to plugins that implement an ECS compatibility mode for use with the Elastic Common Schema.
+
+#path.data: /var/lib/logstash
+#path.logs: /var/log/logstash
+
+# X-Pack Monitoring
+# https://www.elastic.co/guide/en/logstash/current/monitoring-logstash.html
+xpack.monitoring.enabled: true
+xpack.monitoring.elasticsearch.hosts: http://elasticsearch:9200
+xpack.monitoring.elasticsearch.sniffing: true
+xpack.monitoring.collection.interval: 10s
+xpack.monitoring.collection.pipeline.details.enabled: true
+
+# X-Pack Management
+# https://www.elastic.co/guide/en/logstash/current/logstash-centralized-pipeline-management.html
+#xpack.management.enabled: true
+#xpack.management.elasticsearch.hosts: http://elasticsearch:9200
+#xpack.management.elasticsearch.sniffing: true
+#xpack.management.logstash.poll_interval: 5s
+
+#config.reload.automatic: true # When set to true, periodically checks if the configuration has changed and reloads the configuration whenever it is changed. This can also be triggered manually through the SIGHUP signal.

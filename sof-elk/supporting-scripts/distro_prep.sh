@@ -1,6 +1,6 @@
 #!/bin/bash
 # SOF-ELK® Supporting script
-# (C)2018 Lewes Technology Consulting, LLC
+# (C)2022 Lewes Technology Consulting, LLC
 #
 # This script is used to prepare the VM for distribution
 
@@ -59,58 +59,56 @@ echo "cleaning yum caches"
 yum clean all --enablerepo=elk-*
 rm -rf /var/cache/yum
 
-echo "cleaning user histories"
+echo "cleaning user home directories"
 rm -f ~root/.bash_history
 rm -f ~elk_user/.bash_history
+rm -f ~root/.python_hisory
+rm -f ~elk_user/.python_history
+rm -f ~root/.lesshst
+rm -f ~elk_user/.lesshst
+rm -rf ~root/.local
+rm -rf ~elk_user/.local
+rm -rf ~root/.cache
+rm -rf ~elk_user/.cache
+rm -rf ~root/.config/htop
+rm -rf ~elk_user/.config/htop
+rm -rf ~root/.config/gcloud/logs
+rm -rf ~elk_user/.config/gcloud/logs
+rm -rf ~root/.vim
+rm -rf ~elk_user/.vim
+#cat /dev/null > ~/.bash_history; history -c ; history -w; exit
 
 echo "cleaning temp directories"
 rm -rf ~elk_user/tmp/*
 
-echo "updating GeoIP database.  (Leave both of these blank to skip the GeoIP update.)"
-echo -n "Enter GeoIP AccountID: "
-read geoip_accountid
-echo -n "Enter GeoIP LicenseKey: "
-read geoip_licensekey
+echo "Resetting GeoIP databases to empty."
+for GEOIPDB in ASN City Country; do
+    rm -f /usr/local/share/GeoIP/GeoLite-${GEOIPDB}.mmdb
+    cp -a /usr/local/sof-elk/supporting-scripts/geoip_bootstrap/empty-GeoLite2-${GEOIPDB}.mmdb /usr/local/share/GeoIP/GeoLite2-${GEOIPDB}.mmdb
+done
+rm -f /etc/GeoIP.conf
+rm -f /etc/cron.d/geoipupdate
 
-if [ -z "${geoip_accountid}" -o -z "${geoip_licensekey}" ]; then
-    echo "
-    AccountID ${geoip_accountid}
-    LicenseKey ${geoip_licensekey}
-    EditionIDs GeoLite2-Country GeoLite2-City GeoLite2-ASN
-    DatabaseDirectory /usr/local/share/GeoIP
-    " > ~/GeoIP.conf
-    geoipupdate -f ~/GeoIP.conf
-    shred -u ~/GeoIP.conf
-fi
-
-echo "stopping elastalert"
-systemctl stop elastalert
-echo "clearing elastalert"
-curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status' > /dev/null
-curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status_error' > /dev/null
-curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status_past' > /dev/null
-curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status_silence' > /dev/null
-curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status_status' > /dev/null
-#elastalert-create-index --host 127.0.0.1 --port 9200 --no-ssl --no-auth --url-prefix "" --index "elastalert_status" --old-index "" --config /etc/sysconfig/elastalert_config.yml
-
-echo "removing documents from the elasticsearch .kibana index"
-curl -s -H 'kbn-xsrf: true' -H 'Content-Type: application/json' -X POST 'http://localhost:9200/.kibana/_delete_by_query?conflicts=proceed' -d '{"query": { "match_all": {} } }' > /dev/null
+# echo "stopping elastalert"
+# systemctl stop elastalert
+# echo "clearing elastalert"
+# curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status' > /dev/null
+# curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status_error' > /dev/null
+# curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status_past' > /dev/null
+# curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status_silence' > /dev/null
+# curl -s -XDELETE 'http://127.0.0.1:9200/elastalert_status_status' > /dev/null
+# elastalert-create-index --host 127.0.0.1 --port 9200 --no-ssl --no-auth --url-prefix "" --index "elastalert_status" --old-index "" --config /etc/sysconfig/elastalert_config.yml
 
 echo "reload kibana dashboards"
 /usr/local/sbin/load_all_dashboards.sh
 
-echo "stopping logstash"
+echo "stopping kibana"
 systemctl stop kibana
 
 echo "stopping filebeat service"
 systemctl stop filebeat
 echo "clearing filebeat data"
-if [ -f /var/lib/filebeat/registry ]; then
-    echo "filebeat registry is not empty.  The sources below are still tracked.  Press return if this is correct or Ctrl-C to quit."
-    cat /var/lib/filebeat/registry | jq -r '.[].source' | sed -e 's/^/- /'
-    read
-fi
-rm -f /var/lib/filebeat/meta.json
+rm -rf /var/lib/filebeat
 
 echo "removing elasticsearch .tasks index"
 curl -s -XDELETE 'http://localhost:9200/.tasks' > /dev/null
@@ -124,11 +122,6 @@ systemctl stop elasticsearch
 echo "stopping logstash"
 systemctl stop logstash
 
-echo "clearing MAC address from interface"
-grep -v HWADDR /etc/sysconfig/network-scripts/ifcfg-ens33 > /tmp/tmp_ifcfg_ens
-cat /tmp/tmp_ifcfg_ens > /etc/sysconfig/network-scripts/ifcfg-ens33
-rm /tmp/tmp_ifcfg_ens
-
 echo "stopping syslog"
 systemctl stop rsyslog
 echo "clearing existing log files"
@@ -137,6 +130,17 @@ find /var/log -type f -exec rm -f {} \;
 echo "clearing SSH Host Keys"
 systemctl stop sshd
 rm -f /etc/ssh/*key*
+
+echo "clearing cron/at content"
+systemctl stop atd
+systemctl stop crond
+rm -f /var/spool/at/.SEQ
+rm -f /var/spool/at/*
+
+echo "clearing mail spools"
+systemctl stop postfix
+rm -f /var/spool/mail/root
+rm -f /var/spool/mail/elk_user
 
 echo "clearing /tmp/"
 rm -rf /tmp/*
@@ -161,5 +165,6 @@ if [ $DISKSHRINK -eq 1 ]; then
     done
 fi
 
-echo "updating /etc/issue* files for boot message"
-cat /etc/issue.prep | sed -e "s/<%REVNO%>/$revdate/" > /etc/issue.stock
+echo "updating /etc/issue file for boot message"
+cat /etc/issue.prep | sed -e "s/<%REVNO%>/$revdate/" > /etc/issue
+rm -f /etc/issue.stock

@@ -1,7 +1,46 @@
----
+# For more configuration options see the configuration guide for Kibana in
+# https://www.elastic.co/guide/index.html
+
+# =================== System: Kibana Server ===================
 ## Default Kibana configuration from kibana-docker.
 ## from https://github.com/elastic/kibana-docker/blob/master/build/kibana/config/kibana.yml
 #
-server.name: kibana
-server.host: "0"
-elasticsearch.url: http://elasticsearch:9200
+
+# Specifies the address to which the Kibana server will bind. IP addresses and host names are both valid values.
+# The default is 'localhost', which usually means remote machines will not be able to connect.
+# To allow connections from remote users, set this parameter to a non-loopback address.
+server.host: "0.0.0.0"
+
+# The Kibana server's name. This is used for display purposes.
+server.name: "SOF-ELK"
+
+# Time in milliseconds for Elasticsearch to wait for responses from shards. Set to 0 to disable.
+#elasticsearch.shardTimeout: 30000
+elasticsearch.hosts: ["http://kibana:9200/"]
+elasticsearch.shardTimeout: 90000
+
+# =================== System: Logging ===================
+# Set the value of this setting to off to suppress all logging output, or to debug to log everything. Defaults to 'info'
+#logging.root.level: debug
+
+# Enables you to specify a file where Kibana stores log output.
+#logging:
+  #appenders:
+    #file:
+      #type: file
+      #fileName: /var/log/kibana/kibana.log
+      #layout:
+        #type: json
+  #root:
+    #appenders:
+      #- default
+      #- file
+
+# Specifies the path where Kibana creates the process ID file.
+#pid.file: /run/kibana/kibana.pid
+
+telemetry.optIn: false
+telemetry.allowChangingOptInStatus: false
+
+xpack.reporting.roles.enabled: false
+xpack.security.showInsecureClusterWarning: false

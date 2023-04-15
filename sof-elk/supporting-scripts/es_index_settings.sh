@@ -1,6 +1,6 @@
 #!/bin/bash
 # SOF-ELK® Supporting script
-# (C)2019 Lewes Technology Consulting, LLC
+# (C)2023 Lewes Technology Consulting, LLC
 #
 # This script will apply settings to elasticsearch indices when run
 
@@ -8,7 +8,7 @@ es_host=localhost
 es_port=9200
 NUMBER_OF_REPLICAS=0
 SPECIAL_INDEXES="elastalert_*"
-DATA_INDEXES="filefolderaccess filesystem httpdlog lnkfiles logstash netflow"
+DATA_INDEXES="aws azure evtxlogs filefolderaccess filesystem gcp gws httpdlog lnkfiles logstash logstash-firewall logstash-ids logstash-sflow logstash-switch logstash-windows netflow microsoft365 plaso zeek kubernetes"
 
 [ -r /etc/sysconfig/sof-elk ] && . /etc/sysconfig/sof-elk
 

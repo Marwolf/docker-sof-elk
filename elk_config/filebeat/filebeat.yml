@@ -1,17 +1,90 @@
 # https://github.com/elastic/beats/blob/master/filebeat/filebeat.reference.yml
 
-filebeat.config_dir: /usr/local/sof-elk/lib/filebeat_inputs
+#==========================  Modules configuration =============================
+filebeat.modules:
+
+#---------------------------- Elasticsearch Module ----------------------------
+- module: elasticsearch
+  # Server log
+  server:
+    enabled: false
+
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    #var.paths:
+
+  gc:
+    enabled: false
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    #var.paths:
+
+  audit:
+    enabled: false
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    #var.paths:
+
+  slowlog:
+    enabled: false
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    #var.paths:
+
+  deprecation:
+    enabled: false
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    #var.paths:
+
+#-------------------------------- Kibana Module --------------------------------
+- module: kibana
+  # Server logs
+  log:
+    enabled: false
+
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    #var.paths:
+    
+#=========================== Filebeat inputs =============================
+
+# List of inputs to fetch data.
+filebeat.inputs:
+
+#------------------------------ Log input --------------------------------
+- type: log
+
+  # Change to true to enable this input configuration.
+  enabled: false
+  paths:
+    - /var/log/*.log
+
+filebeat.config.inputs:
+  enabled: true
+  path: /usr/local/sof-elk/lib/filebeat_inputs/*.yml
 
 #========================== Elasticsearch output ===============================
-output.logstash:
-  hosts: ["${LOGSTASH_HOST}:5044"]
+#output.logstash:
+  #enabled: true
+  #hosts: ["${LOGSTASH_HOST}:5044"]
+  #hosts: ["logstash:5044"]
+  #ssl.enabled: false
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
 
 #============================== Dashboards =====================================
-# setup.dashboards:
-#   enabled: true
+#setup.dashboards.enabled: true
 
 #============================== Kibana =========================================
-#   host: "${KIBANA_HOST}:5601"
+setup.kibana:
+host: "kibana:5601"
+ssl.enabled: false
+   
+   #host: "${KIBANA_HOST}:5601"
+#module: kibana
+#host: "kibana:5601"
 
 #============================== Xpack Monitoring ===============================
 # xpack.monitoring:
