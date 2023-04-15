@@ -14,33 +14,17 @@ server.host: "0.0.0.0"
 # The Kibana server's name. This is used for display purposes.
 server.name: "SOF-ELK"
 
-# Time in milliseconds for Elasticsearch to wait for responses from shards. Set to 0 to disable.
-#elasticsearch.shardTimeout: 30000
 elasticsearch.hosts: ["http://kibana:9200/"]
+
+# Time in milliseconds for Elasticsearch to wait for responses from shards. Set to 0 to disable.
 elasticsearch.shardTimeout: 90000
 
-# =================== System: Logging ===================
-# Set the value of this setting to off to suppress all logging output, or to debug to log everything. Defaults to 'info'
-#logging.root.level: debug
-
-# Enables you to specify a file where Kibana stores log output.
-#logging:
-  #appenders:
-    #file:
-      #type: file
-      #fileName: /var/log/kibana/kibana.log
-      #layout:
-        #type: json
-  #root:
-    #appenders:
-      #- default
-      #- file
-
-# Specifies the path where Kibana creates the process ID file.
-#pid.file: /run/kibana/kibana.pid
+monitoring.ui.container.elasticsearch.enabled: true
 
 telemetry.optIn: false
 telemetry.allowChangingOptInStatus: false
 
 xpack.reporting.roles.enabled: false
-xpack.security.showInsecureClusterWarning: false
+#xpack.security.showInsecureClusterWarning: false
+
+xpack.reporting.kibanaServer.hostname: kibana
