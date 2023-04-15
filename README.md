@@ -15,8 +15,8 @@ I decided to make Sof-ELK in a dockerized deployment stack to make it:
 
 ```sh
 # Set up directories
-mkdir elasticsearch-data filebeat-data
-chmod 777 elasticsearch-data filebeat-data
+mkdir logstash
+chmod 777 logstash
 # Bring up the stack
 docker-compose up
 ```
