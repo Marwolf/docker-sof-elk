@@ -1,4 +1,4 @@
-# Dockerized Sof-ELK
+# Dockerized Sof-ELK - work in progress, this does not currently load Kibana!
 
 ## Purpose
 
